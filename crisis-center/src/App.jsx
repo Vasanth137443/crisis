@@ -490,18 +490,50 @@ function StaffDashboard({onBack,alerts,setAlerts}){
     showToast(`🚨 Emergency team dispatched to ${selected.location}!`,"#ff2d55");
   }
 
-  function submitManual(){
-    if(!mLoc) return;
-    const zone = FLOOR_ZONES[floor]?.find(z=>z.label===mLoc)||FLOOR_ZONES[floor]?.[0];
-    setAlerts(prev=>[{
-      id:Date.now(),type:mType,location:mLoc,severity:mSev,
-      ts:Date.now(),zone:zone?.id||"",floor,source:"Manual",
-      camera:null,confidence:null,resolved:false,escalated:false,isNew:true,
-    },...prev].slice(0,100));
-    playAlertSound(ALERT_TYPES[mType]?.sound||880,0.4);
-    setShowModal(false);
-    showToast(`⚠️ Manual incident reported: ${mType} at ${mLoc}`,"#ff9500");
+  async function submitManual(){
+  if(!mLoc) return;
+
+  const zone = FLOOR_ZONES[floor]?.find(z=>z.label===mLoc) || FLOOR_ZONES[floor]?.[0];
+
+  try {
+    // 🔥 SEND DATA TO BACKEND
+    await fetch("https://crisis-backend-lrqk.onrender.com/api/alerts", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        type: mType,
+        location: mLoc,
+        severity: mSev,
+        floor: floor
+      })
+    });
+  } catch (err) {
+    console.error("Backend error:", err);
   }
+
+  // ✅ KEEP EXISTING UI UPDATE
+  setAlerts(prev=>[{
+    id: Date.now(),
+    type: mType,
+    location: mLoc,
+    severity: mSev,
+    ts: Date.now(),
+    zone: zone?.id || "",
+    floor,
+    source: "Manual",
+    camera: null,
+    confidence: null,
+    resolved: false,
+    escalated: false,
+    isNew: true,
+  }, ...prev].slice(0,100));
+
+  playAlertSound(ALERT_TYPES[mType]?.sound || 880, 0.4);
+  setShowModal(false);
+  showToast(`⚠️ Manual incident reported: ${mType} at ${mLoc}`, "#ff9500");
+}
 
   const now = new Date();
   const clock = now.toLocaleTimeString("en-US",{hour12:false});

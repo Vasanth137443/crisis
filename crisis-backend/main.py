@@ -183,7 +183,7 @@ async def push_alert_to_api(payload: dict):
     async with httpx.AsyncClient() as client:
         try:
             await client.post(
-                "http://localhost:5500/api/alerts",
+                "https://crisis-backend-lrqk.onrender.com/api/alerts",
                 json=payload,
                 timeout=5.0,
             )
